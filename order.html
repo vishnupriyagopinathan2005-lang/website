@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order Summary</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      max-width: 450px;
+      width: 100%;
+      background: #fff;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+    }
+    h2, h3 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    .cart-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #eee;
+      padding: 12px 0;
+    }
+    .cart-info {
+      flex: 1;
+    }
+    .cart-info h4 {
+      margin: 0;
+      font-size: 16px;
+      color: #444;
+    }
+    .cart-info p {
+      margin: 4px 0;
+      color: #777;
+    }
+    .qty-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .qty-btn {
+      cursor: pointer;
+      border: none;
+      background: #eee;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .qty-btn:hover {
+      background: #ddd;
+    }
+    .remove-btn {
+      cursor: pointer;
+      color: red;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    .summary {
+      margin-top: 20px;
+      border-top: 2px solid #f1f1f1;
+      padding-top: 10px;
+    }
+    .summary p {
+      display: flex;
+      justify-content: space-between;
+      margin: 8px 0;
+      font-size: 15px;
+      color: #333;
+    }
+    form {
+      margin-top: 25px;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+      font-size: 14px;
+      color: #333;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      background: #ff5e5e;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #e14c4c;
+    }
+    #successMsg {
+      display: none;
+      text-align: center;
+      color: green;
+      font-weight: bold;
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🛒 Order Summary</h2>
+    <div id="cart"></div>
+
+    <div class="summary">
+      <p><span>Sub-Total:</span> <span id="subtotal">₹0</span></p>
+      <p><span>GST (5%):</span> <span id="gst">₹0</span></p>
+      <p><span>Delivery:</span> <span id="delivery">₹50</span></p>
+      <hr>
+      <p><strong>Grand Total:</strong> <strong id="grandtotal">₹0</strong></p>
+    </div>
+
+    <form id="orderForm">
+      <h3>👤 User Details</h3>
+      <label for="name">Full Name</label>
+      <input type="text" id="name" required />
+
+      <label for="phone">Phone Number</label>
+      <input type="tel" id="phone" required />
+
+      <label for="email">Email</label>
+      <input type="email" id="email" required />
+
+      <label for="address">Address</label>
+      <textarea id="address" rows="3" required></textarea>
+
+      <button type="submit">Finish Order</button>
+    </form>
+    
+
+    <div id="successMsg">✅ Order placed successfully!</div>
+  </div>
+
+  <script>
+    let orders = JSON.parse(localStorage.getItem("orders")) || [];
+
+    function renderCart() {
+      const cartDiv = document.getElementById("cart");
+      cartDiv.innerHTML = "";
+      let subtotal = 0;
+
+      orders.forEach((item, index) => {
+        subtotal += item.price * item.qty;
+
+        cartDiv.innerHTML += `
+          <div class="cart-item">
+            <div class="cart-info">
+              <h4>${item.name}</h4>
+              <p>₹${item.price}</p>
+              <div class="qty-controls">
+                <button type="button" class="qty-btn" onclick="decreaseQty(${index})">-</button>
+                <span>${item.qty}</span>
+                <button type="button" class="qty-btn" onclick="increaseQty(${index})">+</button>
+                <span class="remove-btn" onclick="removeItem(${index})">x</span>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById("subtotal").textContent = "₹" + subtotal.toFixed(2);
+      let gst = subtotal * 0.05;
+      document.getElementById("gst").textContent = "₹" + gst.toFixed(2);
+      let delivery = orders.length > 0 ? 50 : 0;
+      document.getElementById("delivery").textContent = "₹" + delivery.toFixed(2);
+      document.getElementById("grandtotal").textContent = "₹" + (subtotal + gst + delivery).toFixed(2);
+    }
+
+    function increaseQty(index) {
+      orders[index].qty++;
+      localStorage.setItem("orders", JSON.stringify(orders));
+      renderCart();
+    }
+
+    function decreaseQty(index) {
+      if (orders[index].qty > 1) {
+        orders[index].qty--;
+      }
+      localStorage.setItem("orders", JSON.stringify(orders));
+      renderCart();
+    }
+
+    function removeItem(index) {
+      orders.splice(index, 1);
+      localStorage.setItem("orders", JSON.stringify(orders));
+      renderCart();
+    }
+
+    document.getElementById("orderForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      document.getElementById("successMsg").style.display = "block";
+      localStorage.removeItem("orders"); 
+      document.getElementById("cart").innerHTML = "";
+      document.querySelector(".summary").style.display = "none";
+      document.getElementById("orderForm").style.display = "none";
+    });
+
+    orders = orders.map(item => ({ ...item, qty: item.qty || 1 }));
+    renderCart();
+  </script>
+</body>
+</html>
